@@ -68,7 +68,7 @@ menubar.geometry = { width = nil,
 
 --- Width of blank space left in the right side.
 -- @tfield number right_margin
-menubar.right_margin = theme.xresources.apply_dpi(8)
+menubar.right_margin = 8
 
 --- Label used for "Next page", default "▶▶".
 -- @tfield[opt="▶▶"] string right_label
@@ -81,7 +81,7 @@ menubar.left_label = "◀◀"
 -- awful.widget.common.list_update adds three times a margin of dpi(4)
 -- for each item:
 -- @tfield number list_interspace
-local list_interspace = theme.xresources.apply_dpi(4) * 3
+local list_interspace = 4*3
 
 --- Allows user to specify custom parameters for prompt.run function
 -- (like colors).
