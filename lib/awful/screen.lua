@@ -232,8 +232,8 @@ end
 data.dpi = {}
 data.scaling_factor = {}
 
-data.global_dpi = nil
-data.global_scaling_factor = nil
+data.fallback_dpi = nil
+data.fallback_scaling_factor = nil
 
 local mm_in_inch = 25.4 -- millimeters to the inch
 local reference_dpi = 96 -- 'standard' DPI value
@@ -265,15 +265,15 @@ local scale_for_dpi = function(dpi)
     end
 end
 
-local global_dpi = function()
+function screen.get_fallback_dpi()
     -- TODO we might want to look int XSettings Xft/DPI too
-    if not data.global_dpi then
+    if not data.fallback_dpi then
         -- Might not be present when run under unit tests
         if capi and capi.awesome and capi.awesome.xrdb_get_value then
-            data.global_dpi = tonumber(capi.awesome.xrdb_get_value("", "Xft.dpi"))
+            data.fallback_dpi = tonumber(capi.awesome.xrdb_get_value("", "Xft.dpi"))
         end
     end
-    if not data.global_dpi then
+    if not data.fallback_dpi then
         -- Following Keith Packard's whitepaper on Xft,
         -- https://keithp.com/~keithp/talks/xtc2001/paper/xft.html#sec-editing
         -- the proper fallback for Xft.dpi is the vertical DPI reported by
@@ -283,21 +283,37 @@ local global_dpi = function()
             _, h = root.size()
             _, hmm = root.size_mm()
             if hmm ~= 0 then
-                data.global.dpi = util.round(h*mm_in_inch/hmm)
+                data.fallback_dpi = util.round(h*mm_in_inch/hmm)
             end
         end
     end
-    if not data.global_dpi then
-        data.global_dpi = 96
+    if not data.fallback_dpi then
+        data.fallback_dpi = 96
     end
-    return data.global_dpi
+    return data.fallback_dpi
 end
 
-local global_scaling_factor = function(s)
-    if not data.global_scaling_factor then
-        data.global_scaling_factor = scale_for_dpi(global_dpi())
+function screen.set_fallback_dpi(dpi)
+    data.fallback_dpi = dpi
+    -- Recompute if set to nil i.e. reset
+    dpi = screen.get_fallback_dpi()
+    -- TODO maybe if the scaling factor was set by the user, do not reset it
+    -- unless the DPI change was significant
+    data.fallback_scaling_factor = scale_for_dpi(dpi)
+    return dpi
+end
+
+function screen.get_fallback_scaling_factor()
+    if not data.fallback_scaling_factor then
+        data.fallback_scaling_factor = scale_for_dpi(screen.get_fallback_dpi())
     end
-    return data.global_scaling_factor
+    return data.fallback_scaling_factor
+end
+
+function screen.set_fallback_scaling_factor(scale)
+    data.fallback_scaling_factor = scale
+    -- Recompute if set to nil i.e. reset
+    return screen.get_fallback_scaling_factor()
 end
 
 local autocompute_dpi = function(s)
@@ -335,21 +351,21 @@ local autocompute_dpi = function(s)
         dpi = max_dpi
     end
     if not dpi then
-        dpi = global_dpi()
+        dpi = screen.get_fallback_dpi()
     end
     return dpi
 end
 
 local set_dpi_internal = function(s, dpi)
     data.dpi[s] = dpi
+    -- TODO maybe if the scaling factor was set by the user, do not reset it
+    -- unless the DPI change was significant
     data.scaling_factor[s] = scale_for_dpi(dpi)
 end
 
 function screen.object.get_dpi(self)
     local s = get_screen(self)
-    if not s then
-        return global_dpi()
-    end
+    assert(s)
     local dpi = data.dpi[s]
     if not dpi then
         dpi = autocompute_dpi(s)
@@ -361,11 +377,7 @@ end
 
 function screen.object.set_dpi(self, dpi)
     local s = get_screen(self)
-    if not s then
-        data.global_dpi = dpi
-        -- if dpi was nil, this will re-computed it
-        return global_dpi()
-    end
+    assert(s)
     dpi = dpi or autocompute_dpi(self)
     set_dpi_internal(s, dpi)
     self:emit_signal("dpi")
@@ -374,9 +386,7 @@ end
 
 function screen.object.get_scaling_factor(self)
     local s = get_screen(self)
-    if not s then
-        return global_scaling_factor()
-    end
+    assert(s)
     local scale = data.scaling_factor[s]
     if not data.scaling_factor[s] then
         -- Compute from DPI
@@ -396,13 +406,8 @@ end
 
 function screen.object.set_scaling_factor(self, scale)
     local s = get_screen(self)
-    if not s then
-        data.global_scaling_factor = scale
-        return global_scaling_factor()
-    end
-    if not scale then
-        scale = scale_for_dpi(self:get_dpi())
-    end
+    assert(s)
+    scale = scale or scale_for_dpi(self:get_dpi())
     data.scaling_factor[s] = scale
     return scale
 end
