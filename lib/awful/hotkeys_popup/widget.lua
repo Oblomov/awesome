@@ -52,8 +52,8 @@ function widget.new()
         group_rules = awful.util.table.clone(widget.group_rules),
         title_font = "Monospace Bold 9",
         description_font = "Monospace 8",
-        width = 1200
-        height = 800
+        width = 1200,
+        height = 800,
         border_width = beautiful.border_width or 2,
         modifiers_color = beautiful.bg_minimize or "#555555",
         group_margin = 6,
