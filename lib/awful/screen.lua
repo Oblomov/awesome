@@ -266,8 +266,28 @@ local scale_for_dpi = function(dpi)
 end
 
 local global_dpi = function()
+    -- TODO we might want to look int XSettings Xft/DPI too
     if not data.global_dpi then
-        -- TODO get Xft.dpi or the root window DPI reported by X
+        -- Might not be present when run under unit tests
+        if capi and capi.awesome and capi.awesome.xrdb_get_value then
+            data.global_dpi = tonumber(capi.awesome.xrdb_get_value("", "Xft.dpi"))
+        end
+    end
+    if not data.global_dpi then
+        -- Following Keith Packard's whitepaper on Xft,
+        -- https://keithp.com/~keithp/talks/xtc2001/paper/xft.html#sec-editing
+        -- the proper fallback for Xft.dpi is the vertical DPI reported by
+        -- the X server. This will generally be 96 on Xorg, unless the user
+        -- has configured it differently
+        if root then
+            _, h = root.size()
+            _, hmm = root.size_mm()
+            if hmm ~= 0 then
+                data.global.dpi = util.round(h*mm_in_inch/hmm)
+            end
+        end
+    end
+    if not data.global_dpi then
         data.global_dpi = 96
     end
     return data.global_dpi
