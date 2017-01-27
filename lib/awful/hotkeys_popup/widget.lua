@@ -14,7 +14,6 @@ local capi = {
 local awful = require("awful")
 local wibox = require("wibox")
 local beautiful = require("beautiful")
-local dpi = beautiful.xresources.apply_dpi
 
 
 -- Stripped copy of this module https://github.com/copycat-killer/lain/blob/master/util/markup.lua:
@@ -53,11 +52,11 @@ function widget.new()
         group_rules = awful.util.table.clone(widget.group_rules),
         title_font = "Monospace Bold 9",
         description_font = "Monospace 8",
-        width = dpi(1200),
-        height = dpi(800),
-        border_width = beautiful.border_width or dpi(2),
+        width = 1200
+        height = 800
+        border_width = beautiful.border_width or 2,
         modifiers_color = beautiful.bg_minimize or "#555555",
-        group_margin = dpi(6),
+        group_margin = 6,
         additional_hotkeys = {},
         labels = {
             Mod4="Super",
