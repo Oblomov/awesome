@@ -9,7 +9,9 @@
 -- Grab environment
 local awesome = awesome
 local screen = screen
-local round = require("awful.util").round
+local util = require("awful.util")
+local a_screen = require("awful.screen")
+local round = util.round
 local gears_debug = require("gears.debug")
 
 local xresources = {}
@@ -64,8 +66,6 @@ function xresources.get_current_theme()
 end
 
 
-local dpi_per_screen = {}
-
 local function get_screen(s)
     return s and screen[s]
 end
@@ -74,20 +74,17 @@ end
 -- @tparam[opt] integer|screen s The screen.
 -- @treturn number DPI value.
 function xresources.get_dpi(s)
+    if s then
+        util.deprecate("Use s.dpi instead of beautiful.xresources.get_dpi")
+    else
+        util.deprecate("Use awful.screen.get_fallback_dpi instead of beautiful.xresources.get_dpi")
+    end
     s = get_screen(s)
-    if dpi_per_screen[s] then
-        return dpi_per_screen[s]
+    if s then
+        return s.dpi
+    else
+        return a_screen.get_fallback_dpi()
     end
-    if not xresources.dpi then
-        -- Might not be present when run under unit tests
-        if awesome and awesome.xrdb_get_value then
-            xresources.dpi = tonumber(awesome.xrdb_get_value("", "Xft.dpi"))
-        end
-        if not xresources.dpi then
-            xresources.dpi = 96
-        end
-    end
-    return xresources.dpi
 end
 
 
@@ -95,11 +92,16 @@ end
 -- @tparam number dpi DPI value.
 -- @tparam[opt] integer s Screen.
 function xresources.set_dpi(dpi, s)
+    if s then
+        util.deprecate("Use s.dpi= instead of beautiful.xresources.set_dpi")
+    else
+        util.deprecate("Use awful.screen.set_fallback_dpi instead of beautiful.xresources.set_dpi")
+    end
     s = get_screen(s)
     if not s then
-        xresources.dpi = dpi
+        a_screen.set_fallback_dpi(dpi)
     else
-        dpi_per_screen[s] = dpi
+        s.dpi = dpi
     end
 end
 
@@ -109,7 +111,13 @@ end
 -- @tparam[opt] integer|screen s The screen.
 -- @treturn integer Resulting size (rounded to integer).
 function xresources.apply_dpi(size, s)
-    return round(size / 96 * xresources.get_dpi(s))
+    if s then
+        util.deprecate("Use s.apply_scaling instead of beautiful.xresources.apply_dpi_dpi")
+        return s:apply_scaling(size)
+    else
+        util.deprecate("Use awful.screen.apply_fallback_scaling instead of beautiful.xresources.set_dpi")
+        return a_screen.apply_fallback_scaling(size)
+    end
 end
 
 return xresources
