@@ -16,7 +16,6 @@ local tags = require("awful.tag")
 local keygrabber = require("awful.keygrabber")
 local client_iterate = require("awful.client").iterate
 local beautiful = require("beautiful")
-local dpi = require("beautiful").xresources.apply_dpi
 local object = require("gears.object")
 local surface = require("gears.surface")
 local protected_call = require("gears.protected_call")
@@ -583,13 +582,13 @@ function menu.entry(parent, args) -- luacheck: no unused args
         end
         iconbox = wibox.widget.imagebox()
         if iconbox:set_image(icon) then
-            margin:set_left(dpi(2))
+            margin:set_left(2)
         else
             iconbox = nil
         end
     end
     if not iconbox then
-        margin:set_left(args.theme.height + dpi(2))
+        margin:set_left(args.theme.height + 2)
     end
     -- Create the submenu icon widget
     local submenu
