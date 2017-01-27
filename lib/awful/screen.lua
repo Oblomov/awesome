@@ -412,6 +412,29 @@ function screen.object.set_scaling_factor(self, scale)
     return scale
 end
 
+-- Multiply len by the screen scaling factor
+function screen.object.apply_scaling(self, len)
+    return len*self.scaling_factor
+end
+
+function screen.apply_fallback_scaling(len)
+    return len*screen.get_fallback_scaling_factor()
+end
+
+-- Multiply le by the ratio of screen to reference dpi
+-- This should only be used when exact scaling is desired, e.g.
+-- to represent exact lengths ("1 cm" as opposed to just a UI length
+-- that can be comfrotably visible at the given DPI, for which apply_scaling()
+-- should be used instead
+function screen.object.apply_exact_dpi_scaling(self, len)
+    return util.round(len*self.dpi/reference_dpi)
+end
+
+function screen.apply_exact_fallback_dpi_scaling(len)
+    return util.round(len*screen.get_fallback_dpi()/reference_dpi)
+end
+
+
 
 --- Get the preferred screen in the context of a client.
 --
