@@ -22,7 +22,6 @@ local bt = require("beautiful")
 local wibox = require("wibox")
 local surface = require("gears.surface")
 local cairo = require("lgi").cairo
-local dpi = require("beautiful").xresources.apply_dpi
 
 local function get_screen(s)
     return s and capi.screen[s]
@@ -34,9 +33,9 @@ local naughty = {}
 Naughty configuration - a table containing common popup settings.
 
 @table naughty.config
-@tfield[opt=apply_dpi(4)] int padding Space between popups and edge of the
+@tfield[opt=4] int padding Space between popups and edge of the
   workarea.
-@tfield[opt=apply_dpi(1)] int spacing Spacing between popups.
+@tfield[opt=1] int spacing Spacing between popups.
 @tfield[opt={"/usr/share/pixmaps/"}] table icon_dirs List of directories
   that will be checked by `getIcon()`.
 @tfield[opt={ "png", "gif" }] table icon_formats List of formats that will be
@@ -56,8 +55,8 @@ notifications, e.g.
 --]]
 --
 naughty.config = {
-    padding = dpi(4),
-    spacing = dpi(1),
+    padding = 4,
+    spacing = 1,
     icon_dirs = { "/usr/share/pixmaps/", },
     icon_formats = { "png", "gif" },
     notify_callback = nil,
@@ -103,16 +102,16 @@ naughty.config.presets = {
 -- @tfield[opt=""] string text
 -- @tfield[opt] int screen Defaults to `awful.screen.focused`.
 -- @tfield[opt=true] boolean ontop
--- @tfield[opt=apply_dpi(5)] int margin
--- @tfield[opt=apply_dpi(1)] int border_width
+-- @tfield[opt=5] int margin
+-- @tfield[opt=1] int border_width
 -- @tfield[opt="top_right"] string position
 naughty.config.defaults = {
     timeout = 5,
     text = "",
     screen = nil,
     ontop = true,
-    margin = dpi(5),
-    border_width = dpi(1),
+    margin = 5,
+    border_width = 1,
     position = "top_right"
 }
 
