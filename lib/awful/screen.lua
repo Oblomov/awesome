@@ -17,6 +17,7 @@ local capi =
 local util = require("awful.util")
 local object = require("gears.object")
 local grect =  require("gears.geometry").rectangle
+local gears_debug = require("gears.debug")
 
 local function get_screen(s)
     return s and capi.screen[s]
@@ -215,6 +216,177 @@ function screen.object.set_padding(self, padding)
         self:emit_signal("padding")
     end
 end
+
+--- The screen DPI and scale factor.
+--
+-- This gives and sets information about the DPI of a screen
+--
+-- **Signals:**
+--
+-- * *property::dpi*
+--
+-- @property dpi
+-- @property scaling_factor
+
+-- TODO reset on RRChangeNotifyEvent
+data.dpi = {}
+data.scaling_factor = {}
+
+data.global_dpi = nil
+data.global_scaling_factor = nil
+
+local mm_in_inch = 25.4 -- millimeters to the inch
+local reference_dpi = 96 -- 'standard' DPI value
+local max_dpi_noscale = 144 -- largest DPI before we consider scaling
+
+--- Compute the scale appropriate for a given DPI.
+-- There is no scaling (scale = 1) unless the DPI is
+-- higher than max_dpi_noscale. Above that, scaling
+-- is obtained by rounding to the nearest integer,
+-- with ties breaking to even
+local scale_for_dpi = function(dpi)
+    if dpi <= max_dpi_noscale then
+        return 1
+    end
+    local r = dpi/reference_dpi
+    local f = math.floor(r)
+    local c = math.ceil(r)
+    if r - f < c - r then
+        return f
+    end
+    if r - f > c - r then
+        return c
+    end
+    -- it's a tie, prefer the even number
+    if c % 2 == 0 then
+        return c
+    else
+        return f
+    end
+end
+
+local global_dpi = function()
+    if not data.global_dpi then
+        -- TODO get Xft.dpi or the root window DPI reported by X
+        data.global_dpi = 96
+    end
+    return data.global_dpi
+end
+
+local global_scaling_factor = function(s)
+    if not data.global_scaling_factor then
+        data.global_scaling_factor = scale_for_dpi(global_dpi())
+    end
+    return data.global_scaling_factor
+end
+
+local autocompute_dpi = function(s)
+    s = get_screen(s)
+    local dpi = nil
+    if s and s.outputs then
+        -- We compute both min and max dpi, even though we only use
+        -- max. We may want to change this in the future
+        local min_dpi = nil
+        local max_dpi = nil
+        -- We take the average of the horizontal and vertical DPI
+        local h = s.geometry.height
+        local w = s.geometry.width
+        for name, out in pairs(s.outputs) do
+            local hmm = out.mm_height
+            local wmm = out.mm_width
+            local dpi = 0
+            local count = 0
+            if hmm ~= 0 then
+                dpi = dpi + h*mm_in_inch/hmm
+                count = count + 1
+            end
+            if wmm ~= 0 then
+                dpi = dpi + w*mm_in_inch/wmm
+                count = count + 1
+            end
+            dpi = dpi/count
+            if not min_dpi or dpi < min_dpi then
+                min_dpi = dpi
+            end
+            if not max_dpi or dpi > max_dpi then
+                max_dpi = dpi
+            end
+        end
+        dpi = max_dpi
+    end
+    if not dpi then
+        dpi = global_dpi()
+    end
+    return dpi
+end
+
+local set_dpi_internal = function(s, dpi)
+    data.dpi[s] = dpi
+    data.scaling_factor[s] = scale_for_dpi(dpi)
+end
+
+function screen.object.get_dpi(self)
+    local s = get_screen(self)
+    if not s then
+        return global_dpi()
+    end
+    local dpi = data.dpi[s]
+    if not dpi then
+        dpi = autocompute_dpi(s)
+        -- cache the value
+        set_dpi_internal(s, dpi)
+    end
+    return dpi
+end
+
+function screen.object.set_dpi(self, dpi)
+    local s = get_screen(self)
+    if not s then
+        data.global_dpi = dpi
+        -- if dpi was nil, this will re-computed it
+        return global_dpi()
+    end
+    dpi = dpi or autocompute_dpi(self)
+    set_dpi_internal(s, dpi)
+    self:emit_signal("dpi")
+    return dpi
+end
+
+function screen.object.get_scaling_factor(self)
+    local s = get_screen(self)
+    if not s then
+        return global_scaling_factor()
+    end
+    local scale = data.scaling_factor[s]
+    if not data.scaling_factor[s] then
+        -- Compute from DPI
+        local dpi = data.dpi[s]
+        if dpi then
+            -- This should not happen
+            gears_debug.print_warning("Screen has DPI but no scaling factor")
+            data.scaling_factor[s] = scale_for_dpi(dpi)
+        else
+            dpi = autocompute_dpi(s)
+            set_dpi_internal(s, dpi)
+        end
+        scale = data.scaling_factor[s]
+    end
+    return scale
+end
+
+function screen.object.set_scaling_factor(self, scale)
+    local s = get_screen(self)
+    if not s then
+        data.global_scaling_factor = scale
+        return global_scaling_factor()
+    end
+    if not scale then
+        scale = scale_for_dpi(self:get_dpi())
+    end
+    data.scaling_factor[s] = scale
+    return scale
+end
+
 
 --- Get the preferred screen in the context of a client.
 --
