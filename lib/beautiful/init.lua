@@ -116,7 +116,8 @@ local function load_font(name)
     -- Load new font
     local desc = Pango.FontDescription.from_string(name)
     local ctx = PangoCairo.font_map_get_default():create_context()
-    ctx:set_resolution(beautiful.xresources.get_dpi())
+    ---- FIXME mixed-dpi
+    -- ctx:set_resolution(beautiful.xresources.get_dpi())
 
     -- Apply default values from the context (e.g. a default font size)
     desc:merge(ctx:get_font_description(), false)
