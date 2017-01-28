@@ -409,6 +409,7 @@ function screen.object.set_scaling_factor(self, scale)
     assert(s)
     scale = scale or scale_for_dpi(self:get_dpi())
     data.scaling_factor[s] = scale
+    self:emit_signal("scaling_factor")
     return scale
 end
 
