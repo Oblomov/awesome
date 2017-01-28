@@ -42,7 +42,7 @@ local function get_widget_context(self)
     end
 
     local context = self._widget_context
-    local dpi = s.dpi
+    local dpi = s.scaling_dpi
     if (not context) or context.screen ~= s or context.dpi ~= dpi then
         context = {
             screen = s,
