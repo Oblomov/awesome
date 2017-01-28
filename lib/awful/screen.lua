@@ -372,6 +372,7 @@ function screen.object.get_dpi(self)
         -- cache the value
         set_dpi_internal(s, dpi)
     end
+    gears_debug.print_warning("DPI for " .. self.index .. ": " .. dpi .. "\n" .. debug.traceback())
     return dpi
 end
 
@@ -401,6 +402,7 @@ function screen.object.get_scaling_factor(self)
         end
         scale = data.scaling_factor[s]
     end
+    gears_debug.print_warning("Scaling factor for " .. self.index .. ": " .. scale .. "\n" .. debug.traceback())
     return scale
 end
 
