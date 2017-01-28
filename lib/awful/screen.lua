@@ -422,6 +422,14 @@ function screen.apply_fallback_scaling(len)
     return len*screen.get_fallback_scaling_factor()
 end
 
+-- Get the 'scaling dpi', i.e. effective pixels per inch that would
+-- give the scaling factor, obtained as the product of reference DPI and
+-- scaling factor. So, for example, if the true DPI is 236, the scaling factor
+-- is 2, and the scaling_dpi will be 96*2 = 192
+function screen.object.get_scaling_dpi(self)
+    return self:apply_scaling(96)
+end
+
 -- Multiply le by the ratio of screen to reference dpi
 -- This should only be used when exact scaling is desired, e.g.
 -- to represent exact lengths ("1 cm" as opposed to just a UI length
