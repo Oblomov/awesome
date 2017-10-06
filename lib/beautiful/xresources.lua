@@ -75,8 +75,8 @@ end
 -- @treturn number DPI value.
 function xresources.get_dpi(s)
     s = get_screen(s)
-    if dpi_per_screen[s] then
-        return dpi_per_screen[s]
+    if s then
+        return dpi_per_screen[s] or s.dpi
     end
     if not xresources.dpi then
         -- Might not be present when run under unit tests

@@ -504,6 +504,28 @@ function screen.object.get_selected_tag(s)
     return screen.object.get_selected_tags(s)[1]
 end
 
+--- The screen DPI
+--
+-- For cloned displays, this reports the smallest DPI
+--
+-- @property dpi
+-- @treturn number the pixel density for the screen, in dots per inch
+function screen.object.get_dpi(s)
+    local h = s.geometry.height
+    local w = s.geometry.width
+    local mm_inch = 25.4 -- 25.4 millimeters to the inch
+    local dpi = nil
+    for _, o in pairs(s.outputs) do
+        local dpix = w*mm_inch/o.mm_width
+        local dpiy = h*mm_inch/o.mm_height
+        local dpi_avg = (dpix+dpiy)/2
+        if not dpi or dpi_avg < dpi then
+            dpi = dpi_avg
+        end
+    end
+    return dpi or 96 -- fall back to 96 if no information available
+end
+
 
 --- When the tag history changed.
 -- @signal tag::history::update
