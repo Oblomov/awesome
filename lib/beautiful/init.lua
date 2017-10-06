@@ -103,8 +103,9 @@ local active_font
 -- @see https://developer.gnome.org/pango/stable/pango-Fonts.html#pango-font-description-from-string
 -- @tparam string|lgi.Pango.FontDescription name Font, which can be a
 --   string or a lgi.Pango.FontDescription.
+-- @tparam screen (optional) screen to get DPI information about
 -- @treturn table A table with `name`, `description` and `height`.
-local function load_font(name)
+local function load_font(name, screen)
     name = name or active_font
     if name and type(name) ~= "string" then
         if descs[name] then
@@ -113,14 +114,15 @@ local function load_font(name)
             name = name:to_string()
         end
     end
-    if fonts[name] then
-        return fonts[name]
+    local fonts_key = {name, screen}
+    if fonts[fonts_key] then
+        return fonts[fonts_key]
     end
 
     -- Load new font
     local desc = Pango.FontDescription.from_string(name)
     local ctx = PangoCairo.font_map_get_default():create_context()
-    ctx:set_resolution(beautiful.xresources.get_dpi())
+    ctx:set_resolution(beautiful.xresources.get_dpi(screen))
 
     -- Apply default values from the context (e.g. a default font size)
     desc:merge(ctx:get_font_description(), false)
@@ -136,7 +138,7 @@ local function load_font(name)
     end
 
     local font = { name = name, description = desc, height = height }
-    fonts[name] = font
+    fonts[fonts_key] = font
     descs[desc] = name
     return font
 end
@@ -174,8 +176,9 @@ end
 --- Get the height of a font.
 --
 -- @param name Name of the font
-function beautiful.get_font_height(name)
-    return load_font(name).height
+-- @param screen (optional) screen to compute height for
+function beautiful.get_font_height(name, screen)
+    return load_font(name, screen).height
 end
 
 --- Init function, should be runned at the beginning of configuration file.
