@@ -66,8 +66,19 @@ end
 
 local dpi_per_screen = {}
 
+local dpi_scale_rounding = nil
+
 local function get_screen(s)
     return s and screen[s]
+end
+
+local function rounded_dpi(dpi)
+    if dpi_scale_rounding then
+        local rounded = 96*dpi_scale_rounding(dpi/96)
+        return rounded
+    else
+        return dpi
+    end
 end
 
 --- Get global or per-screen DPI value falling back to xrdb.
@@ -76,7 +87,7 @@ end
 function xresources.get_dpi(s)
     s = get_screen(s)
     if s then
-        return dpi_per_screen[s] or s.dpi
+        return dpi_per_screen[s] or rounded_dpi(s.dpi)
     end
     if not xresources.dpi then
         -- Might not be present when run under unit tests
@@ -94,7 +105,7 @@ function xresources.get_dpi(s)
                 local _, h = root.size()
                 local _, hmm = root.size_mm()
                 if hmm ~= 0 then
-                    xresources.dpi = round(h*mm_to_inch/hmm)
+                    xresources.dpi = rounded_dpi(h*mm_to_inch/hmm)
                 end
             end
         end
@@ -119,13 +130,23 @@ function xresources.set_dpi(dpi, s)
     end
 end
 
+--- Set a rounding mode for autodetected DPIs
+--
+-- If set, beautiful will round the screen DPI to a multiple of the reference
+-- 96 DPI, according to the function used
+-- @tparam function a function to be applied to the DPI scaling factor
+function xresources.set_dpi_rounding(func)
+    dpi_scale_rounding = func
+end
+
 
 --- Compute resulting size applying current DPI value (optionally per screen).
 -- @tparam number size Size
 -- @tparam[opt] integer|screen s The screen.
 -- @treturn integer Resulting size (rounded to integer).
 function xresources.apply_dpi(size, s)
-    return round(size / 96 * xresources.get_dpi(s))
+    local scale = xresources.get_dpi(s)/96
+    return round(size * scale)
 end
 
 return xresources
