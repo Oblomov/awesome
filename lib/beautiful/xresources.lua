@@ -145,6 +145,7 @@ end
 -- @tparam[opt] integer|screen s The screen.
 -- @treturn integer Resulting size (rounded to integer).
 function xresources.apply_dpi(size, s)
+    if not size then return size end
     local scale = xresources.get_dpi(s)/96
     return round(size * scale)
 end
