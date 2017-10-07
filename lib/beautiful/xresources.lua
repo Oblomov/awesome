@@ -140,6 +140,9 @@ local function recalc_auto_dpi()
     end
 end
 
+screen.connect_signal("property::geometry", recalc_auto_dpi)
+screen.connect_signal("property::outputs", recalc_auto_dpi)
+
 
 --- Get global or per-screen DPI value falling back to xrdb.
 -- @tparam[opt] integer|screen s The screen.
