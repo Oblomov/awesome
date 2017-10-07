@@ -50,7 +50,6 @@ local abutton = require("awful.button")
 local shape = require("gears.shape")
 local beautiful = require("beautiful")
 local textbox = require("wibox.widget.textbox")
-local dpi = require("beautiful").xresources.apply_dpi
 local cairo = require("lgi").cairo
 local setmetatable = setmetatable
 local unpack = unpack or table.unpack -- luacheck: globals unpack (compatibility with Lua 5.1)
@@ -490,8 +489,8 @@ end
 -- @tparam[opt] table args.objects A list of objects linked to the tooltip.
 -- @tparam[opt] number args.delay_show Delay showing the tooltip by this many
 --   seconds.
--- @tparam[opt=apply_dpi(5)] integer args.margin_leftright The left/right margin for the text.
--- @tparam[opt=apply_dpi(3)] integer args.margin_topbottom The top/bottom margin for the text.
+-- @tparam[opt=5] integer args.margin_leftright The left/right margin for the text, in unscaled pixels.
+-- @tparam[opt=3] integer args.margin_topbottom The top/bottom margin for the text, in unscaled pixels.
 -- @tparam[opt=nil] gears.shape args.shape The shape
 -- @treturn awful.tooltip The created tooltip.
 -- @see add_to_object
@@ -587,8 +586,8 @@ function tooltip.new(args)
     self.textbox:set_font(font)
 
     -- Add margin.
-    local m_lr = args.margin_leftright or dpi(5)
-    local m_tb = args.margin_topbottom or dpi(3)
+    local m_lr = args.margin_leftright or 5
+    local m_tb = args.margin_topbottom or 3
     self.marginbox = wibox.container.margin(self.textbox, m_lr, m_lr, m_tb, m_tb)
 
     -- Add tooltip to objects
