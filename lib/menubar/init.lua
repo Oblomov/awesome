@@ -83,11 +83,6 @@ menubar.right_label = "▶▶"
 -- @tfield[opt="◀◀"] string left_label
 menubar.left_label = "◀◀"
 
--- awful.widget.common.list_update adds three times a margin of dpi(4)
--- for each item:
--- @tfield number list_interspace
-local list_interspace = theme.xresources.apply_dpi(4) * 3
-
 --- Allows user to specify custom parameters for prompt.run function
 -- (like colors).
 -- @see awful.prompt
@@ -203,6 +198,9 @@ local function get_current_page(all_items, query, scr)
 
     local width_sum = 0
     local current_page = {}
+    -- awful.widget.common.list_update adds three times a margin of dpi(4)
+    -- for each item:
+    local list_interspace = dpi(4, scr) * 3
     for i, item in ipairs(all_items) do
         item.width = item.width or
             compute_text_width(item.name, scr) +
