@@ -50,7 +50,6 @@ local abutton = require("awful.button")
 local shape = require("gears.shape")
 local beautiful = require("beautiful")
 local textbox = require("wibox.widget.textbox")
-local dpi = require("beautiful").xresources.apply_dpi
 local cairo = require("lgi").cairo
 local setmetatable = setmetatable
 local unpack = unpack or table.unpack -- luacheck: globals unpack (compatibility with Lua 5.1)
@@ -111,7 +110,7 @@ local offset = {
 -- @see shape
 -- @see gears.shape
 
-local function apply_shape(self)
+local function apply_shape(self, scr)
     local s = self._private.shape
 
     local wb = self.wibox
@@ -128,10 +127,13 @@ local function apply_shape(self)
 
     local w, h = wb.width, wb.height
 
+    local scale = scr:dpi_scale(1)
+
     -- First, create a A1 mask for the shape bounding itself
     local img = cairo.ImageSurface(cairo.Format.A1, w, h)
     local cr = cairo.Context(img)
 
+    cr:scale(scale, scale)
     cr:set_source_rgba(1,1,1,1)
 
     s(cr, w, h, unpack(self._private.shape_args or {}))
@@ -144,6 +146,7 @@ local function apply_shape(self)
     -- the capi.drawin's own border support.
     img = cairo.ImageSurface(cairo.Format.ARGB32, w, h)
     cr  = cairo.Context(img)
+    cr:scale(scale, scale)
 
     -- Draw the border (multiply by 2, then mask the inner part to save a path)
     local bw = (self._private.border_width
@@ -208,16 +211,17 @@ end
 --
 -- @tparam tooltip self A tooltip object.
 local function set_geometry(self)
+    local scr = mouse.screen
     -- calculate width / height
-    local n_w, n_h = self.textbox:get_preferred_size(mouse.screen)
-    n_w = n_w + self.marginbox.left + self.marginbox.right
-    n_h = n_h + self.marginbox.top + self.marginbox.bottom
+    local n_w, n_h = self.textbox:get_preferred_size(scr)
+    n_w = n_w + scr:dpi_scale(self.marginbox.left + self.marginbox.right)
+    n_h = n_h + scr:dpi_scale(self.marginbox.top + self.marginbox.bottom)
 
     local w = self:get_wibox()
     w:geometry({ width = n_w, height = n_h })
 
     if self._private.shape then
-        apply_shape(self)
+        apply_shape(self, scr)
     end
 
     local mode = self.mode
@@ -228,7 +232,7 @@ local function set_geometry(self)
         apply_mouse_mode(self)
     end
 
-    a_placement.no_offscreen(w)
+    a_placement.no_offscreen(w, scr)
 end
 
 -- Show a tooltip.
@@ -490,8 +494,8 @@ end
 -- @tparam[opt] table args.objects A list of objects linked to the tooltip.
 -- @tparam[opt] number args.delay_show Delay showing the tooltip by this many
 --   seconds.
--- @tparam[opt=apply_dpi(5)] integer args.margin_leftright The left/right margin for the text.
--- @tparam[opt=apply_dpi(3)] integer args.margin_topbottom The top/bottom margin for the text.
+-- @tparam[opt=5] integer args.margin_leftright The left/right margin for the text, in unscaled pixels.
+-- @tparam[opt=3] integer args.margin_topbottom The top/bottom margin for the text, in unscaled pixels.
 -- @tparam[opt=nil] gears.shape args.shape The shape
 -- @treturn awful.tooltip The created tooltip.
 -- @see add_to_object
@@ -587,8 +591,8 @@ function tooltip.new(args)
     self.textbox:set_font(font)
 
     -- Add margin.
-    local m_lr = args.margin_leftright or dpi(5)
-    local m_tb = args.margin_topbottom or dpi(3)
+    local m_lr = args.margin_leftright or 5
+    local m_tb = args.margin_topbottom or 3
     self.marginbox = wibox.container.margin(self.textbox, m_lr, m_lr, m_tb, m_tb)
 
     -- Add tooltip to objects
