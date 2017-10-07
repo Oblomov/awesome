@@ -34,6 +34,7 @@ local wibox = require("wibox")
 local gcolor = require("gears.color")
 local gstring = require("gears.string")
 local gdebug = require("gears.debug")
+local dpi = theme.xresources.apply_dpi
 
 local function get_screen(s)
     return s and capi.screen[s]
@@ -73,7 +74,7 @@ menubar.geometry = { width = nil,
 
 --- Width of blank space left in the right side.
 -- @tfield number right_margin
-menubar.right_margin = theme.xresources.apply_dpi(8)
+menubar.right_margin = 8
 
 --- Label used for "Next page", default "▶▶".
 -- @tfield[opt="▶▶"] string right_label
@@ -197,7 +198,8 @@ local function get_current_page(all_items, query, scr)
     if not menubar.right_label_width then
         menubar.right_label_width = compute_text_width(menubar.right_label, scr)
     end
-    local available_space = instance.geometry.width - menubar.right_margin -
+    local available_space = instance.geometry.width -
+        dpi(menubar.right_margin, scr) -
         menubar.right_label_width - menubar.left_label_width -
         compute_text_width(query, scr) - instance.prompt.width
 
