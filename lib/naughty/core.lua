@@ -38,9 +38,9 @@ local naughty = {}
 Naughty configuration - a table containing common popup settings.
 
 @table naughty.config
-@tfield[opt=apply_dpi(4)] int padding Space between popups and edge of the
-  workarea.
-@tfield[opt=apply_dpi(1)] int spacing Spacing between popups.
+@tfield[opt=4] int padding Space between popups and edge of the
+  workarea, in unscaled pixels.
+@tfield[opt=1] int spacing Spacing between popups, in unscaled pixels.
 @tfield[opt={"/usr/share/pixmaps/"}] table icon_dirs List of directories
   that will be checked by `getIcon()`.
 @tfield[opt={ "png", "gif" }] table icon_formats List of formats that will be
@@ -64,8 +64,8 @@ notifications, e.g.
 --]]
 --
 naughty.config = {
-    padding = dpi(4),
-    spacing = dpi(1),
+    padding = 4,
+    spacing = 1,
     icon_dirs = { "/usr/share/pixmaps/", },
     icon_formats = { "png", "gif" },
     notify_callback = nil,
@@ -126,16 +126,16 @@ naughty.config.presets = {
 -- @tfield[opt=""] string text
 -- @tfield[opt] int screen Defaults to `awful.screen.focused`.
 -- @tfield[opt=true] boolean ontop
--- @tfield[opt=apply_dpi(5)] int margin
--- @tfield[opt=apply_dpi(1)] int border_width
+-- @tfield[opt=5] int margin
+-- @tfield[opt=1] int border_width
 -- @tfield[opt="top_right"] string position
 naughty.config.defaults = {
     timeout = 5,
     text = "",
     screen = nil,
     ontop = true,
-    margin = dpi(5),
-    border_width = dpi(1),
+    margin = 5,
+    border_width = 1,
     position = "top_right"
 }
 
@@ -274,26 +274,29 @@ local function get_offset(s, position, idx, width, height)
     idx = idx or #naughty.notifications[s][position] + 1
     width = width or naughty.notifications[s][position][idx].width
 
+    local padding = dpi(naughty.config.padding, s)
+    local spacing = dpi(naughty.config.spacing, s)
+
     -- calculate x
     if position:match("left") then
-        v.x = ws.x + naughty.config.padding
+        v.x = ws.x + padding
     elseif position:match("middle") then
         v.x = ws.x + (ws.width / 2) - (width / 2)
     else
-        v.x = ws.x + ws.width - (width + naughty.config.padding)
+        v.x = ws.x + ws.width - (width + padding)
     end
 
     -- calculate existing popups' height
     local existing = 0
     for i = 1, idx-1, 1 do
-        existing = existing + naughty.notifications[s][position][i].height + naughty.config.spacing
+        existing = existing + naughty.notifications[s][position][i].height + spacing
     end
 
     -- calculate y
     if position:match("top") then
-        v.y = ws.y + naughty.config.padding + existing
+        v.y = ws.y + padding + existing
     else
-        v.y = ws.y + ws.height - (naughty.config.padding + height + existing)
+        v.y = ws.y + ws.height - (padding + height + existing)
     end
 
     -- Find old notification to replace in case there is not enough room.
@@ -510,7 +513,7 @@ local function update_size(notification)
     -- crop to workarea size if too big
     local workarea = n.screen.workarea
     local border_width = s.border_width or 0
-    local padding = naughty.config.padding or 0
+    local padding = dpi(naughty.config.padding, n.screen) or 0
     if width > workarea.width - 2*border_width - 2*padding then
         width = workarea.width - 2*border_width - 2*padding
     end
@@ -630,16 +633,16 @@ function naughty.notify(args)
         beautiful.notification_bg or beautiful.bg_normal or '#535d6c'
     local border_color = args.border_color or preset.border_color or
         beautiful.notification_border_color or beautiful.bg_focus or '#535d6c'
-    local border_width = args.border_width or preset.border_width or
-        beautiful.notification_border_width
+    local border_width = dpi(args.border_width or preset.border_width or
+        beautiful.notification_border_width, s)
     local shape = args.shape or preset.shape or
         beautiful.notification_shape
-    local width = args.width or preset.width or
-        beautiful.notification_width
-    local height = args.height or preset.height or
-        beautiful.notification_height
-    local margin = args.margin or preset.margin or
-        beautiful.notification_margin
+    local width = dpi(args.width or preset.width or
+        beautiful.notification_width, s)
+    local height = dpi(args.height or preset.height or
+        beautiful.notification_height, s)
+    local margin = dpi(args.margin or preset.margin or
+        beautiful.notification_margin, s)
     local opacity = args.opacity or preset.opacity or
         beautiful.notification_opacity
     local notification = { screen = s, destroy_cb = destroy_cb, timeout = timeout }
