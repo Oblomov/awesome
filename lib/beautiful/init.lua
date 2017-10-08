@@ -34,6 +34,7 @@ local theme = {}
 local descs = setmetatable({}, { __mode = 'k' })
 local fonts = setmetatable({}, { __mode = 'v' })
 local active_font
+local font_dpi
 
 --- The default font.
 -- @beautiful beautiful.font
@@ -97,6 +98,54 @@ local active_font
 
 --- The current theme path (if any)
 -- @tfield string beautiful.theme_path
+
+
+--- Font DPI API
+
+--- Return the vertical DPI reported by the X server via the core protocol
+--
+-- For servers with the RANDR extensions, this can change dynamically, so it's
+-- better not to cache it
+local function core_dpi()
+    local dpi = 96 -- default
+    if root then
+        local mm_to_inch = 25.4
+        local _, h = root.size()
+        local _, hmm = root.size_mm()
+        if hmm ~= 0 then
+            dpi = h*mm_to_inch/hmm
+        end
+    end
+    return dpi
+end
+
+--- Get the global font DPI
+--
+-- Unless overridden by the user, this matches Xft.dpi, falling back to the
+-- core DPI reported by the server
+function beautiful.get_font_dpi()
+    if not font_dpi then
+        -- Might not be present when run under unit tests
+        if awesome and awesome.xrdb_get_value then
+            font_dpi = tonumber(awesome.xrdb_get_value("", "Xft.dpi"))
+        end
+    end
+    -- Following Keith Packard's whitepaper on Xft,
+    -- https://keithp.com/~keithp/talks/xtc2001/paper/xft.html#sec-editing
+    -- the proper fallback for Xft.dpi is the vertical DPI reported by
+    -- the X server. Note that this can change, so we don't store it
+    return font_dpi or core_dpi()
+end
+
+--- Set the global font DPI
+--
+-- @tparam[opt] number|nil dpi The DPI to set the font DPI to,
+--   or nil to autocompute
+function beautiful.set_font_dpi(dpi)
+    font_dpi = dpi
+    -- TODO signal
+    return get_font_dpi()
+end
 
 --- Load a font from a string or a font description.
 --
