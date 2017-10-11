@@ -509,6 +509,56 @@ end
 
 local mm_per_inch = 25.4
 
+--- DPI rounding policy
+--
+-- Most monitors don't have a DPI which is a nice exact multiple of the
+-- reference pixel density (96). In such cases, users' preferences vary:
+-- some prefer using the DPI values as-is, resulting in fractional scaling,
+-- others prefer rounding the scaling factor (so that e.g. anything above 144
+-- DPI and below 240 should result in a scaling factor of 2).
+-- While this could be achieved by the users by manually forcing specific DPI
+-- values for the screens, it's rather annoying in dynamic configurations.
+-- So we offer the possibility for the user to choose a global policy,
+-- and all DPI usage will take this into consideration
+-- Note that rounding is only applied to autocomputed DPI values, never
+-- when the user sets the DPI themselves.
+
+-- predefined DPI rounding policies
+local dpi_rounding_function = {
+    identity = function(dpi) return dpi end,
+    floor =  function(dpi) return math.floor(dpi/96)*96 end,
+    ceil =  function(dpi) return math.ceil(dpi/96)*96 end,
+    round =  function(dpi) return round(dpi/96)*96 end,
+    user = nil -- user-defined function
+}
+-- default rounding policy
+data.dpi_rounding_policy = 'identity'
+local dpi_round = dpi_rounding_function.identity
+
+
+--- Set the DPI rounding policy
+--
+-- @tparam string|function Policy (identity, floor, ceil, round) or user
+--  function, or nil to reset to default (identity)
+
+function screen.set_dpi_rounding_policy(policy)
+    policy = policy or 'identity'
+    if type(policy) == 'function' then
+        dpi_rounding_function.user = policy
+        policy = 'user'
+    end
+
+    -- for the getter
+    data.dpi_rounding_policy = policy
+    dpi_round = dpi_rounding_function[policy]
+    return screen.get_dpi_rounding_policy()
+end
+
+--- Returns the name and associated function for the DPI rounding policy
+function screen.get_dpi_rounding_policy()
+    return {data.dpi_rounding_policy, dpi_round}
+end
+
 --- Return the vertical DPI reported by the X server via the core protocol
 --
 -- For servers with the RANDR extensions, this can change dynamically, so it's
@@ -519,7 +569,8 @@ function screen.core_dpi()
         local _, h = root.size()
         local _, hmm = root.size_mm()
         if hmm ~= 0 then
-            dpi = h*mm_per_inch/hmm
+            -- round according to user preference
+            dpi = dpi_round(h*mm_per_inch/hmm)
         end
     end
     return dpi
@@ -543,7 +594,7 @@ function screen.object.get_dpi(s)
         dpi = math.min(dpix, dpiy, dpi or dpix)
     end
 
-    return dpi or screen.core_dpi()
+    return dpi and dpi_round(dpi) or screen.core_dpi()
 end
 
 function screen.object.set_dpi(s, dpi)
@@ -559,7 +610,7 @@ end
 -- @treturn integer Number of (device) pixels best approximating the given
 --   length
 function screen.object.dpi_scale(s, length)
-    return length and round(length * s.dpi / 96)
+    return length and round(length * s.dpi/96)
 end
 
 
